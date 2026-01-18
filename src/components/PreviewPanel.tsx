@@ -24,8 +24,34 @@ const WARD_COLORS: Record<WardType, string> = {
 interface PreviewData {
   heightmap?: { width: number; height: number; data: Float32Array };
   flowField?: { width: number; height: number; directions: Uint8Array; accumulation: Float32Array };
+  basins?: { width: number; height: number; labels: Uint32Array; basinCount: number };
   rivers?: { polylines: Polygon[] };
   cityLayout?: CityLayout;
+}
+
+// Generate distinct colors for watershed basins
+function getBasinColor(basinId: number): [number, number, number] {
+  if (basinId === 0) return [26, 26, 46]; // Background color
+  // Use golden ratio for distinct hues
+  const hue = (basinId * 137.508) % 360;
+  const sat = 0.6 + (basinId % 3) * 0.1;
+  const light = 0.4 + (basinId % 5) * 0.05;
+  // HSL to RGB conversion
+  const c = (1 - Math.abs(2 * light - 1)) * sat;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = light - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (hue < 60) { r = c; g = x; }
+  else if (hue < 120) { r = x; g = c; }
+  else if (hue < 180) { g = c; b = x; }
+  else if (hue < 240) { g = x; b = c; }
+  else if (hue < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  return [
+    Math.floor((r + m) * 255),
+    Math.floor((g + m) * 255),
+    Math.floor((b + m) * 255),
+  ];
 }
 
 export function PreviewPanel({ graph, mode, onModeChange }: PreviewPanelProps) {
@@ -56,6 +82,17 @@ export function PreviewPanel({ graph, mode, onModeChange }: PreviewPanelProps) {
           accumulation: Float32Array;
         };
         data.flowField = ff;
+      }
+
+      // Watershed basins
+      if (node.outputs.basins) {
+        const b = node.outputs.basins as {
+          width: number;
+          height: number;
+          labels: Uint32Array;
+          basinCount: number;
+        };
+        data.basins = b;
       }
 
       // Rivers
@@ -92,10 +129,10 @@ export function PreviewPanel({ graph, mode, onModeChange }: PreviewPanelProps) {
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const { heightmap, flowField, rivers, cityLayout } = previewData;
+    const { heightmap, flowField, basins, rivers, cityLayout } = previewData;
 
     // Check if we have any data to render
-    if (!heightmap && !flowField && !rivers && !cityLayout) {
+    if (!heightmap && !flowField && !basins && !rivers && !cityLayout) {
       ctx.fillStyle = '#666';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
@@ -116,6 +153,9 @@ export function PreviewPanel({ graph, mode, onModeChange }: PreviewPanelProps) {
     } else if (flowField) {
       dataWidth = flowField.width;
       dataHeight = flowField.height;
+    } else if (basins) {
+      dataWidth = basins.width;
+      dataHeight = basins.height;
     } else if (cityLayout) {
       dataWidth = cityLayout.bounds.maxX - cityLayout.bounds.minX;
       dataHeight = cityLayout.bounds.maxY - cityLayout.bounds.minY;
@@ -190,6 +230,27 @@ export function PreviewPanel({ graph, mode, onModeChange }: PreviewPanelProps) {
 
         ctx.drawImage(tempCanvas, 0, 0);
       }
+    }
+
+    // Render watershed basins as colored regions
+    if (basins && basins.basinCount > 0) {
+      const imageData = ctx.createImageData(basins.width, basins.height);
+      for (let i = 0; i < basins.labels.length; i++) {
+        const basinId = basins.labels[i];
+        const [r, g, b] = getBasinColor(basinId);
+        imageData.data[i * 4] = r;
+        imageData.data[i * 4 + 1] = g;
+        imageData.data[i * 4 + 2] = b;
+        imageData.data[i * 4 + 3] = basinId > 0 ? 180 : 0; // Semi-transparent
+      }
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = basins.width;
+      tempCanvas.height = basins.height;
+      const tempCtx = tempCanvas.getContext('2d')!;
+      tempCtx.putImageData(imageData, 0, 0);
+
+      ctx.drawImage(tempCanvas, 0, 0);
     }
 
     // Render rivers

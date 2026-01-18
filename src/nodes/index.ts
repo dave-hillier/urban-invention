@@ -1,7 +1,12 @@
 import { registerNode } from './registry';
 import { CityBlueprintNode, CityGeneratorNode } from './city';
 import { HeightmapInputNode } from './terrain';
-import { FlowDirectionNode, FlowAccumulationNode, RiverExtractionNode } from './watershed';
+import {
+  FlowDirectionNode,
+  FlowAccumulationNode,
+  RiverExtractionNode,
+  WatershedBasinsNode,
+} from './watershed';
 
 // Register all nodes
 export function initializeNodes(): void {
@@ -12,6 +17,7 @@ export function initializeNodes(): void {
   registerNode(FlowDirectionNode);
   registerNode(FlowAccumulationNode);
   registerNode(RiverExtractionNode);
+  registerNode(WatershedBasinsNode);
 
   // City nodes
   registerNode(CityBlueprintNode);
