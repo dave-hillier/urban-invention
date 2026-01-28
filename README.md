@@ -1,6 +1,6 @@
 # Urban Invention
 
-A web-based visual node graph editor for procedural medieval city generation. This project implements the Medieval Fantasy City Generator (MFCG) algorithm by Oleg Dolya (watabou), ported from Haxe to TypeScript.
+A web-based visual node graph editor for procedural medieval city generation. 
 
 Generate historically-accurate High Medieval South Coast settlements (1100-1300 AD) ranging from small hamlets (~5 buildings) to large towns (200+ buildings).
 
