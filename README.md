@@ -101,11 +101,6 @@ urban-invention/
 
 The project automatically deploys to GitHub Pages on push to the main branch via GitHub Actions.
 
-## Credits
-
-- **MFCG Algorithm** - [Oleg Dolya (watabou)](https://github.com/watabou/medieval-fantasy-city-generator)
-- **Academic References** - Parish & Muller (Procedural Modeling of Cities), Runions et al. (L-systems)
-
 ## License
 
 See [LICENSE](LICENSE) for details.
